@@ -21,12 +21,12 @@ UMAP 2D projection of learned node embeddings from the penultimate GNN layer. Sa
 1–2 hop transaction neighborhoods around OFAC-sanctioned nodes. Node size reflects in-degree; edge color encodes transaction amount (ETH). Four representative sanctioned addresses shown:
 
 ### Node 17180 (1,165 nodes, 11,471 edges)
-Dense neighborhood with the sanctioned node at the center, revealing high-connectivity hub behavior.
+Dense radial subgraph with predominantly light edges (low-value transactions). This topology exemplifies the *placement* stage: many small outgoing transfers scatter funds across a wide set of counterparties. The model's sum aggregation preserves the high fan-out count, distinguishing this pattern from legitimate addresses with fewer connections.
 
 ![Ego Subgraph Node 17180](data-visuals-updated/viz2a_ego_subgraph_static_0_17180.png)
 
 ### Node 30069 (227 nodes, 547 edges)
-Clearest hub-spoke structure. Sanctioned node labeled on the left; edge colors show higher-value transactions (red/orange) radiating outward.
+Clear hub-spoke structure with high-value edges (red/orange, >15,000 ETH) connecting the sanctioned node through a central hub. This is consistent with *integration*-stage laundering via an intermediary mixer or exchange, where consolidated funds flow through a small number of high-value channels. The Amount Received feature captures this asymmetry.
 
 ![Ego Subgraph Node 30069](data-visuals-updated/viz2a_ego_subgraph_static_1_30069.png)
 
@@ -36,7 +36,7 @@ Large neighborhood capped at 2,000 highest-degree nodes. Spectral layout separat
 ![Ego Subgraph Node 31407](data-visuals-updated/viz2a_ego_subgraph_static_2_31407.png)
 
 ### Node 33831 (2,000 nodes capped, 13,561 edges)
-Dense, uniformly connected neighborhood — sanctioned node embedded deeply within a high-degree cluster.
+Radially diffuse with uniform low-value edges, characteristic of the *layering* phase — distributing funds to maximize intermediary hops and obscure the trail. The Timestamp feature is critical here, as these transfers tend to be temporally compressed into short bursts.
 
 ![Ego Subgraph Node 33831](data-visuals-updated/viz2a_ego_subgraph_static_3_33831.png)
 
@@ -54,13 +54,13 @@ Dense, uniformly connected neighborhood — sanctioned node embedded deeply with
 
 ### 4a: SHAP Feature Importance (Surrogate Model)
 
-SHAP values from a GBR surrogate (R²=0.987) fitted to the GNN's predictions, using aggregated edge features per node. `Is Laundering` dominates — a known label leakage from the IBM AML-HI dataset that should be addressed in future work.
+SHAP values from a GBR surrogate (R²=0.880, 114 sampled nodes) fitted to the GNN's predictions, using aggregated edge features per node (excluding leaked `Is_Laundering` and `EdgeID` features). Timestamp dominates (mean |SHAP| ≈ 0.022), followed by Amount Received (~0.009) and Amount Sent (~0.008); three placeholder features contribute negligibly.
 
 ![SHAP Feature Importance](data-visuals-updated/viz4a_shap_feature_importance.png)
 
 ### 4b: Gradient-Based Edge Feature Attribution
 
-Direct gradient backpropagation through the GNN to raw edge features. Left panel shows global sensitivity; right panel shows sensitivity on edges incident to sanctioned nodes. Both confirm `Is Laundering` dominance with `Amount Received` as the strongest legitimate feature.
+Direct gradient backpropagation through the GNN to raw edge features. Left panel shows global sensitivity; right panel shows sensitivity on edges incident to sanctioned nodes. Gradient attribution identifies the same three dominant features but reorders the hierarchy, with Amount Received showing the highest sensitivity, consistent with a more continuous gradient response to transaction amounts versus the threshold-like temporal signal captured by SHAP.
 
 ![Gradient Attribution](data-visuals-updated/viz4b_gradient_attribution.png)
 
